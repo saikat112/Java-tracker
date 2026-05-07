@@ -43,10 +43,11 @@ public class GroupService {
         groupMemberRepository.save(adminMember);
 
         if (request.memberEmails() != null) {
+            final Group savedGroup = group;
             for (String email : request.memberEmails()) {
                 userRepository.findByEmail(email).ifPresent(member -> {
-                    if (!groupMemberRepository.existsByGroupIdAndUserId(group.getId(), member.getId())) {
-                        groupMemberRepository.save(GroupMember.builder().group(group).user(member).role(GroupRole.MEMBER).build());
+                    if (!groupMemberRepository.existsByGroupIdAndUserId(savedGroup.getId(), member.getId())) {
+                        groupMemberRepository.save(GroupMember.builder().group(savedGroup).user(member).role(GroupRole.MEMBER).build());
                     }
                 });
             }
