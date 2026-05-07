@@ -10,5 +10,5 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/expense-tracker-1.0.0.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+EXPOSE 10000
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dserver.port=10000", "-jar", "app.jar"]
