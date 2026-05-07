@@ -2,14 +2,21 @@ package com.expensemanager.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "settlements")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Settlement extends BaseEntity {
+public class Settlement {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id", nullable = false)
@@ -32,4 +39,12 @@ public class Settlement extends BaseEntity {
     @Column(name = "settled_at")
     @Builder.Default
     private LocalDateTime settledAt = LocalDateTime.now();
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }
