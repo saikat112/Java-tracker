@@ -11,4 +11,4 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/expense-tracker-1.0.0.jar app.jar
 EXPOSE 10000
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dserver.port=10000", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-Dserver.port=10000", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
