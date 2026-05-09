@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
@@ -17,10 +16,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#F5F5F7] flex flex-col max-w-lg mx-auto">
       <TopBar />
-      <main className="flex-1 pb-24 pt-16 overflow-y-auto">
-        <div className="max-w-lg mx-auto px-4 py-4">{children}</div>
+      <main className="flex-1 overflow-y-auto pt-[60px] pb-[90px] px-4">
+        <div className="py-4">{children}</div>
       </main>
       <BottomNav />
     </div>
