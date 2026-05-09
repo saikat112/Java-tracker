@@ -8,24 +8,25 @@ import { useExpenseStore } from '@/store/expenseStore';
 import { X, Receipt } from 'lucide-react';
 
 const schema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'Select or enter an item'),
   amount: z.coerce.number().positive('Amount must be positive'),
-  expenseDate: z.string().min(1, 'Date is required'),
+  expenseDate: z.string().min(1),
   categoryId: z.string().optional(),
   notes: z.string().optional(),
   splitType: z.enum(['EQUAL', 'CUSTOM']).default('EQUAL'),
 });
 type FormData = z.infer<typeof schema>;
 
-const SPLIT_OPTIONS = [
-  { value: 'EQUAL', label: '⚖️ Split Equally', desc: 'Divide equally among all members' },
-  { value: 'CUSTOM', label: '✏️ Custom Split', desc: 'Set custom amounts per person' },
+const QUICK_ITEMS = [
+  '🛢️ Oil', '🥩 Meat', '🥦 Vegetables', '🛒 Groceries',
+  '🐟 Fish', '🥚 Eggs', '🍚 Rice', '🥛 Milk',
+  '🍞 Bread', '🧅 Onion', '🍗 Chicken', '🧴 Soap',
 ];
 
 export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: string; onClose: () => void }) {
   const { addGroupExpense } = useGroupStore();
   const { categories, fetchCategories } = useExpenseStore();
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       expenseDate: new Date().toISOString().split('T')[0],
@@ -41,6 +42,7 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
   };
 
   const splitType = watch('splitType');
+  const titleValue = watch('title');
 
   const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-gray-900 text-[15px] placeholder-gray-400 outline-none transition-all focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100";
 
@@ -49,23 +51,23 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
       onClick={onClose}>
       <div
-        className="w-full max-w-lg bg-white rounded-t-[2rem] overflow-hidden max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-lg bg-white rounded-t-[2rem] overflow-hidden max-h-[92vh] flex flex-col"
         style={{ animation: 'slideUp 0.35s cubic-bezier(0.32,0.72,0,1) forwards' }}
         onClick={e => e.stopPropagation()}>
 
         {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1 sticky top-0 bg-white z-10">
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-gray-100 sticky top-5 bg-white z-10">
+        <div className="flex items-center justify-between px-5 pt-2 pb-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-violet-100 rounded-2xl flex items-center justify-center">
               <Receipt size={20} className="text-violet-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Add Group Expense</h2>
+              <h2 className="text-lg font-bold text-gray-900">Add Expense</h2>
               <p className="text-xs text-gray-400">Record a shared expense</p>
             </div>
           </div>
@@ -75,27 +77,47 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
           </button>
         </div>
 
-        {/* Form */}
-        <div className="px-5 py-5 pb-10">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-5 py-4">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-            {/* Amount — big input */}
-            <div className="bg-violet-50 rounded-2xl p-5 text-center">
-              <p className="text-xs text-violet-500 font-semibold uppercase tracking-widest mb-3">Amount</p>
+            {/* Amount */}
+            <div className="bg-violet-50 rounded-2xl p-4 text-center">
+              <p className="text-xs text-violet-500 font-semibold uppercase tracking-widest mb-2">Amount</p>
               <div className="flex items-center justify-center gap-1">
                 <span className="text-4xl font-bold text-violet-600">₹</span>
                 <input {...register('amount')} type="number" step="0.01" placeholder="0"
                   className="text-4xl font-bold text-violet-600 bg-transparent outline-none w-36 text-center placeholder-violet-300" />
               </div>
-              {errors.amount && <p className="text-red-500 text-xs mt-2">{errors.amount.message}</p>}
+              {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
             </div>
 
-            {/* Title */}
+            {/* Quick item chips */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                What was this for? <span className="text-red-500">*</span>
-              </label>
-              <input {...register('title')} placeholder="e.g. Dinner, Hotel, Cab fare"
+              <p className="text-sm font-semibold text-gray-700 mb-2">Quick Select</p>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_ITEMS.map(item => {
+                  const label = item.split(' ').slice(1).join(' ');
+                  const isSelected = titleValue === label;
+                  return (
+                    <button key={item} type="button"
+                      onClick={() => setValue('title', label, { shouldValidate: true })}
+                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition active:scale-95 ${
+                        isSelected
+                          ? 'bg-violet-600 text-white border-violet-600'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-violet-300'
+                      }`}>
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom item input */}
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-2">Or type item name</p>
+              <input {...register('title')} placeholder="e.g. Paneer, Atta, Detergent..."
                 className={inputCls} />
               {errors.title && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.title.message}</p>}
             </div>
@@ -103,36 +125,36 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
             {/* Date & Category */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Date</p>
                 <input {...register('expenseDate')} type="date"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-gray-900 text-sm outline-none transition-all focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100" />
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-3 text-gray-900 text-sm outline-none focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100 transition-all" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Category</p>
                 <select {...register('categoryId')}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-gray-900 text-sm outline-none transition-all focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100">
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-3 text-gray-900 text-sm outline-none focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100 transition-all">
                   <option value="">Select</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
             </div>
 
-            {/* Split Type */}
+            {/* Split type */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">How to split?</label>
+              <p className="text-sm font-semibold text-gray-700 mb-2">Split</p>
               <div className="grid grid-cols-2 gap-2">
-                {SPLIT_OPTIONS.map(opt => (
+                {[
+                  { value: 'EQUAL', label: '⚖️ Equal Split' },
+                  { value: 'CUSTOM', label: '✏️ Custom Split' },
+                ].map(opt => (
                   <label key={opt.value} className="cursor-pointer">
                     <input {...register('splitType')} type="radio" value={opt.value} className="sr-only" />
-                    <div className={`p-3 rounded-2xl border-2 transition-all ${
+                    <div className={`p-3 rounded-2xl border-2 text-center transition-all ${
                       splitType === opt.value
-                        ? 'border-violet-500 bg-violet-50'
-                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                        ? 'border-violet-500 bg-violet-50 text-violet-700'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
                     }`}>
-                      <p className={`text-sm font-semibold ${splitType === opt.value ? 'text-violet-700' : 'text-gray-700'}`}>
-                        {opt.label}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">{opt.desc}</p>
+                      <p className="text-sm font-semibold">{opt.label}</p>
                     </div>
                   </label>
                 ))}
@@ -141,10 +163,10 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <p className="text-sm font-semibold text-gray-700 mb-2">
                 Notes <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <textarea {...register('notes')} placeholder="Any additional details..."
+              </p>
+              <textarea {...register('notes')} placeholder="Any extra details..."
                 rows={2} className={`${inputCls} resize-none`} />
             </div>
 
@@ -154,7 +176,7 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
               {isSubmitting ? (
                 <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Adding...</span></>
               ) : (
-                <><Receipt size={18} /><span>Add Expense</span></>
+                'Add Expense'
               )}
             </button>
           </form>
