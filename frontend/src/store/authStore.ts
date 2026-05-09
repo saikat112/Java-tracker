@@ -11,7 +11,6 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  setAuth: (data: AuthResponse) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,21 +21,16 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
 
-      setAuth: (data: AuthResponse) => {
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        set({ user: data.user, accessToken: data.accessToken, isAuthenticated: true });
-      },
-
       login: async (email, password) => {
         set({ isLoading: true });
         try {
           const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('refreshToken', data.refreshToken);
-          set({ user: data.user, accessToken: data.accessToken, isAuthenticated: true });
-        } finally {
+          set({ user: data.user, accessToken: data.accessToken, isAuthenticated: true, isLoading: false });
+        } catch (err) {
           set({ isLoading: false });
+          throw err;
         }
       },
 
@@ -46,9 +40,10 @@ export const useAuthStore = create<AuthState>()(
           const { data } = await api.post<AuthResponse>('/auth/register', { name, email, password });
           localStorage.setItem('accessToken', data.accessToken);
           localStorage.setItem('refreshToken', data.refreshToken);
-          set({ user: data.user, accessToken: data.accessToken, isAuthenticated: true });
-        } finally {
+          set({ user: data.user, accessToken: data.accessToken, isAuthenticated: true, isLoading: false });
+        } catch (err) {
           set({ isLoading: false });
+          throw err;
         }
       },
 
@@ -58,6 +53,9 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, accessToken: null, isAuthenticated: false });
       },
     }),
-    { name: 'auth-storage', partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }) }
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({ user: state.user, accessToken: state.accessToken, isAuthenticated: state.isAuthenticated }),
+    }
   )
 );
