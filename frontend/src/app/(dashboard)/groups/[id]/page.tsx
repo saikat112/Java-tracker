@@ -4,22 +4,24 @@ import { useEffect, useState } from 'react';
 import { useGroupStore } from '@/store/groupStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, Plus, Calculator } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import AddGroupExpenseModal from '@/components/groups/AddGroupExpenseModal';
 import SettlementView from '@/components/groups/SettlementView';
+import { use } from 'react';
 
-export default function GroupDetailPage({ params }: { params: { id: string } }) {
+export default function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { currentGroup, groupExpenses, settlementSummary, fetchGroup, fetchGroupExpenses, fetchSettlements } = useGroupStore();
   const { user } = useAuthStore();
   const [tab, setTab] = useState<'expenses' | 'settlements'>('expenses');
   const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => {
-    fetchGroup(params.id);
-    fetchGroupExpenses(params.id);
-    fetchSettlements(params.id);
-  }, [params.id]);
+    fetchGroup(id);
+    fetchGroupExpenses(id);
+    fetchSettlements(id);
+  }, [id]);
 
   if (!currentGroup) return <div className="h-32 bg-gray-200 rounded-2xl animate-pulse" />;
 
@@ -89,10 +91,10 @@ export default function GroupDetailPage({ params }: { params: { id: string } }) 
           ))}
         </div>
       ) : (
-        settlementSummary && <SettlementView summary={settlementSummary} groupId={params.id} currentUserId={user?.id || ''} />
+        settlementSummary && <SettlementView summary={settlementSummary} groupId={id} currentUserId={user?.id || ''} />
       )}
 
-      {showAdd && <AddGroupExpenseModal groupId={params.id} onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddGroupExpenseModal groupId={id} onClose={() => setShowAdd(false)} />}
     </div>
   );
 }
