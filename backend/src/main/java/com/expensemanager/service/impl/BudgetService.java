@@ -34,7 +34,13 @@ public class BudgetService {
 
         MonthlyBudget budget = budgetRepository
                 .findByUserIdAndMonthAndYear(userId, request.month(), request.year())
-                .orElse(MonthlyBudget.builder().user(user).month(request.month()).year(request.year()).build());
+                .orElse(MonthlyBudget.builder().user(user).month(request.month()).year(request.year())
+                        .fixedExpenses(new ArrayList<>()).build());
+
+        // Initialize list if null (existing budget)
+        if (budget.getFixedExpenses() == null) {
+            budget.setFixedExpenses(new ArrayList<>());
+        }
 
         BigDecimal savingsGoal = request.savingsGoal() != null ? request.savingsGoal() : BigDecimal.ZERO;
         BigDecimal fixedTotal = request.fixedExpenses() != null
@@ -50,19 +56,22 @@ public class BudgetService {
         budget.setSavingsGoal(savingsGoal);
         budget.setFixedExpensesTotal(fixedTotal);
 
-        if (budget.getFixedExpenses() != null) budget.getFixedExpenses().clear();
-        budget = budgetRepository.save(budget);
+        // Clear old fixed expenses properly
+        if (budget.getFixedExpenses() != null) {
+            budget.getFixedExpenses().clear();
+        }
+        budget = budgetRepository.saveAndFlush(budget);
 
-        if (request.fixedExpenses() != null) {
-            List<FixedExpense> fixedExpenses = new ArrayList<>();
+        // Add new fixed expenses
+        if (request.fixedExpenses() != null && !request.fixedExpenses().isEmpty()) {
             for (BudgetRequest.FixedExpenseItem item : request.fixedExpenses()) {
                 ExpenseCategory cat = item.categoryId() != null
                         ? categoryRepository.findById(UUID.fromString(item.categoryId())).orElse(null) : null;
-                fixedExpenses.add(FixedExpense.builder()
-                        .user(user).budget(budget).name(item.name()).amount(item.amount()).category(cat).build());
+                FixedExpense fe = FixedExpense.builder()
+                        .user(user).budget(budget).name(item.name()).amount(item.amount()).category(cat).build();
+                budget.getFixedExpenses().add(fe);
             }
-            budget.setFixedExpenses(fixedExpenses);
-            budget = budgetRepository.save(budget);
+            budget = budgetRepository.saveAndFlush(budget);
         }
 
         generateWeeklySummaries(budget, userId);

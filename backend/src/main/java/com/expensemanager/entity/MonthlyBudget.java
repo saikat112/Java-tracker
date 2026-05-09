@@ -36,6 +36,7 @@ public class MonthlyBudget extends BaseEntity {
     @Column(name = "flexible_budget", insertable = false, updatable = false, precision = 12, scale = 2)
     private BigDecimal flexibleBudget;
 
-    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FixedExpense> fixedExpenses;
+    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Builder.Default
+    private List<FixedExpense> fixedExpenses = new java.util.ArrayList<>();
 }
