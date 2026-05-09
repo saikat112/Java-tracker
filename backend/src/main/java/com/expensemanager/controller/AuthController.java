@@ -3,14 +3,18 @@ package com.expensemanager.controller;
 import com.expensemanager.dto.request.LoginRequest;
 import com.expensemanager.dto.request.RegisterRequest;
 import com.expensemanager.dto.response.AuthResponse;
-import com.expensemanager.service.impl.AuthService;
+import com.expensemanager.dto.response.UserResponse;
+import com.expensemanager.entity.User;
 import com.expensemanager.mapper.EntityMapper;
+import com.expensemanager.service.impl.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -57,10 +61,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Get current user")
+    @Operation(summary = "Get current authenticated user")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<com.expensemanager.dto.response.UserResponse> me(
-            org.springframework.security.core.annotation.AuthenticationPrincipal com.expensemanager.entity.User user) {
+    public ResponseEntity<UserResponse> me(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(mapper.toUserResponse(user));
     }
 }
