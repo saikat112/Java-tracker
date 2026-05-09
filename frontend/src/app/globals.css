@@ -23,33 +23,81 @@
     --ring: 262.1 83.3% 57.8%;
     --radius: 0.75rem;
   }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 263.4 70% 50.4%;
-  }
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  * { @apply border-border box-border; }
+  body { @apply bg-gray-50 text-foreground antialiased; }
+  html { @apply scroll-smooth; }
 }
 
-/* Mobile-first safe area */
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+/* Safe area for mobile */
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
 .safe-top { padding-top: env(safe-area-inset-top); }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-gray-300 rounded-full; }
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #7C3AED, #4F46E5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card hover */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-98;
+}
+
+/* Bottom sheet */
+.bottom-sheet {
+  @apply fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Input style */
+.input-field {
+  @apply w-full px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold py-4 rounded-2xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-200;
+}
+
+.btn-secondary {
+  @apply w-full bg-gray-100 text-gray-700 font-semibold py-4 rounded-2xl transition-all active:scale-95;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+}
+
+.animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1); }
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-pulse-ring { animation: pulse-ring 2s infinite; }
