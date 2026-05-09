@@ -5,13 +5,17 @@ import com.expensemanager.dto.request.GroupRequest;
 import com.expensemanager.dto.response.*;
 import com.expensemanager.entity.*;
 import com.expensemanager.enums.GroupRole;
+import com.expensemanager.enums.PaymentMethod;
 import com.expensemanager.enums.SplitType;
 import com.expensemanager.exception.AccessDeniedException;
 import com.expensemanager.exception.BadRequestException;
 import com.expensemanager.exception.ResourceNotFoundException;
 import com.expensemanager.mapper.EntityMapper;
 import com.expensemanager.repository.*;
+import com.expensemanager.enums.PaymentMethod;
+import com.expensemanager.repository.ExpenseRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class GroupService {
 
     private final GroupRepository groupRepository;
@@ -32,6 +37,7 @@ public class GroupService {
     private final SettlementRepository settlementRepository;
     private final UserRepository userRepository;
     private final ExpenseCategoryRepository categoryRepository;
+    private final ExpenseRepository expenseRepository;
     private final EntityMapper mapper;
 
     public GroupResponse createGroup(UUID userId, GroupRequest request) {
@@ -101,6 +107,27 @@ public class GroupService {
 
         List<GroupMember> members = groupMemberRepository.findByGroupId(groupId);
         createSplits(expense, members, request);
+
+        // Auto-create personal expense for the payer
+        try {
+            String notes = String.format("[Group: %s] %s", group.getName(),
+                    request.notes() != null ? request.notes() : "").trim();
+            Expense personalExpense = Expense.builder()
+                    .user(paidBy)
+                    .title(request.title())
+                    .amount(request.amount())
+                    .notes(notes)
+                    .paymentMethod(PaymentMethod.CASH)
+                    .expenseDate(request.expenseDate())
+                    .weekNumber(com.expensemanager.util.DateUtil.getWeekOfMonth(request.expenseDate()))
+                    .month(request.expenseDate().getMonthValue())
+                    .year(request.expenseDate().getYear())
+                    .category(category)
+                    .build();
+            expenseRepository.save(personalExpense);
+        } catch (Exception e) {
+            log.warn("Could not create personal expense for group payment: {}", e.getMessage());
+        }
 
         return toGroupExpenseResponse(groupExpenseRepository.findById(expense.getId()).orElseThrow());
     }
