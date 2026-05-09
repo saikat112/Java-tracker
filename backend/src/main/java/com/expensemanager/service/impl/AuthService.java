@@ -33,8 +33,10 @@ public class AuthService {
     private final EntityMapper mapper;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new BadRequestException("Email already registered");
+        // Force fresh check from DB
+        boolean exists = userRepository.findByEmail(request.email()).isPresent();
+        if (exists) {
+            throw new BadRequestException("Email already registered. Please login instead.");
         }
         User user = User.builder()
                 .name(request.name())

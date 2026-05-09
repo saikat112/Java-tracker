@@ -6,7 +6,7 @@ spring:
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
-      connection-init-sql: "SET statement_timeout = 30000"
+      connection-init-sql: "SET search_path TO public"
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -15,6 +15,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
         jdbc:
           lob:
             non_contextual_creation: true
