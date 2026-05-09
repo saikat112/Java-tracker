@@ -28,10 +28,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-          }
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
           set({
             user: data.user,
             accessToken: data.accessToken,
@@ -49,10 +47,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const { data } = await api.post<AuthResponse>('/auth/register', { name, email, password });
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
-          }
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
           set({
             user: data.user,
             accessToken: data.accessToken,
@@ -67,11 +63,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('expense-tracker-auth');
-        }
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('expense-tracker-auth');
         set({
           user: null,
           accessToken: null,
@@ -80,16 +74,20 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      // Called on app load to verify token is still valid
+      // Verify session — only logout if we get 401, ignore network errors (Render cold start)
       verifySession: async () => {
         const { isAuthenticated, accessToken } = get();
         if (!isAuthenticated || !accessToken) return;
         try {
           const { data } = await api.get<User>('/auth/me');
           set({ user: data });
-        } catch {
-          // Token invalid — logout
-          get().logout();
+        } catch (err: unknown) {
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          // Only logout on explicit 401 — not on network errors or timeouts
+          if (status === 401) {
+            get().logout();
+          }
+          // Otherwise keep session alive (server might be waking up)
         }
       },
     }),
@@ -97,11 +95,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'expense-tracker-auth',
       storage: createJSONStorage(() => {
         if (typeof window !== 'undefined') return localStorage;
-        return {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        };
+        return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
       }),
       partialize: (state) => ({
         user: state.user,

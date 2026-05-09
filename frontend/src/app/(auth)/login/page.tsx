@@ -25,8 +25,18 @@ export default function LoginPage() {
     try {
       await login(d.email, d.password);
       router.push('/dashboard');
-    } catch {
-      setError('root', { message: 'Invalid email or password. Please try again.' });
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+
+      if (!status) {
+        // Network error — server might be sleeping
+        setError('root', { message: 'Server is waking up, please try again in 30 seconds...' });
+      } else if (status === 401 || status === 400) {
+        setError('root', { message: msg || 'Invalid email or password.' });
+      } else {
+        setError('root', { message: 'Something went wrong. Please try again.' });
+      }
     }
   };
 
@@ -40,7 +50,8 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Email address</label>
-          <input {...register('email')} type="email" placeholder="you@example.com" className={inputCls} autoComplete="email" />
+          <input {...register('email')} type="email" placeholder="you@example.com"
+            className={inputCls} autoComplete="email" />
           {errors.email && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.email.message}</p>}
         </div>
 
@@ -52,7 +63,7 @@ export default function LoginPage() {
               className={`${inputCls} pr-16`}
               autoComplete="current-password" />
             <button type="button" onClick={() => setShow(!show)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-violet-600 hover:text-violet-800">
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-violet-600">
               {show ? 'Hide' : 'Show'}
             </button>
           </div>
@@ -60,25 +71,32 @@ export default function LoginPage() {
         </div>
 
         {errors.root && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-2xl">
-            <span>⚠️</span>
+          <div className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-2xl">
+            <span className="mt-0.5">⚠️</span>
             <span>{errors.root.message}</span>
           </div>
         )}
 
-        <div className="flex justify-end">
-          <Link href="#" className="text-sm font-semibold text-violet-600 hover:underline">Forgot password?</Link>
+        <div className="flex justify-end -mt-1">
+          <Link href="#" className="text-sm font-semibold text-violet-600 hover:underline">
+            Forgot password?
+          </Link>
         </div>
 
         <button type="submit" disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white font-bold text-base py-4 rounded-2xl shadow-lg shadow-violet-200 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
+          className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-base py-4 rounded-2xl shadow-lg shadow-violet-200 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
           {isLoading
             ? <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Signing in...</span></>
             : 'Sign In →'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-400 mt-8">
+      {/* Hint for first load */}
+      <div className="mt-4 bg-blue-50 border border-blue-100 text-blue-600 text-xs px-4 py-3 rounded-2xl text-center">
+        💡 First login may take 30-60 seconds as the server wakes up (free tier)
+      </div>
+
+      <p className="text-center text-sm text-gray-400 mt-6">
         Don&apos;t have an account?{' '}
         <Link href="/register" className="text-violet-600 font-bold hover:underline">Sign up free</Link>
       </p>

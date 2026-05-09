@@ -10,22 +10,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, verifySession } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Verify session is still valid with backend
-    verifySession().finally(() => setVerified(true));
+    // Verify session in background — don't block UI
+    verifySession();
   }, []);
 
   useEffect(() => {
-    if (mounted && verified && !isAuthenticated) {
+    if (mounted && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [mounted, verified, isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
-  // Show loading spinner while checking auth
-  if (!mounted || !verified) {
+  // Show loading only briefly while hydrating
+  if (!mounted) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -33,7 +32,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-white text-2xl font-bold">₹</span>
           </div>
           <div className="w-6 h-6 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
     );
