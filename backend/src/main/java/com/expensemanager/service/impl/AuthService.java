@@ -10,6 +10,7 @@ import com.expensemanager.mapper.EntityMapper;
 import com.expensemanager.repository.UserRepository;
 import com.expensemanager.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -84,8 +86,13 @@ public class AuthService {
     private AuthResponse buildAuthResponse(User user) {
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        user.setRefreshToken(refreshToken);
-        userRepository.save(user);
+        try {
+            user.setRefreshToken(refreshToken);
+            userRepository.save(user);
+        } catch (Exception e) {
+            // If refresh token save fails (pooler issue), still return tokens
+            log.warn("Could not save refresh token for user {}: {}", user.getEmail(), e.getMessage());
+        }
         return AuthResponse.of(accessToken, refreshToken, mapper.toUserResponse(user));
     }
 }

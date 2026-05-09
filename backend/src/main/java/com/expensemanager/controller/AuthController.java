@@ -4,6 +4,7 @@ import com.expensemanager.dto.request.LoginRequest;
 import com.expensemanager.dto.request.RegisterRequest;
 import com.expensemanager.dto.response.AuthResponse;
 import com.expensemanager.service.impl.AuthService;
+import com.expensemanager.mapper.EntityMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final EntityMapper mapper;
 
     @PostMapping("/register")
     @Operation(summary = "Register new user")
@@ -52,5 +54,13 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(@RequestBody Map<String, String> body) {
         authService.resetPassword(body.get("token"), body.get("newPassword"));
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current user")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<com.expensemanager.dto.response.UserResponse> me(
+            org.springframework.security.core.annotation.AuthenticationPrincipal com.expensemanager.entity.User user) {
+        return ResponseEntity.ok(mapper.toUserResponse(user));
     }
 }

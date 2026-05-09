@@ -12,31 +12,17 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  _setAuth: (data: AuthResponse) => void;
+  verifySession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
-
-      _setAuth: (data: AuthResponse) => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-        }
-        set({
-          user: data.user,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      },
 
       login: async (email, password) => {
         set({ isLoading: true });
@@ -84,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== 'undefined') {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+          localStorage.removeItem('expense-tracker-auth');
         }
         set({
           user: null,
@@ -92,11 +79,30 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         });
       },
+
+      // Called on app load to verify token is still valid
+      verifySession: async () => {
+        const { isAuthenticated, accessToken } = get();
+        if (!isAuthenticated || !accessToken) return;
+        try {
+          const { data } = await api.get<User>('/auth/me');
+          set({ user: data });
+        } catch {
+          // Token invalid — logout
+          get().logout();
+        }
+      },
     }),
     {
       name: 'expense-tracker-auth',
-      storage: createJSONStorage(() => localStorage),
-      // Persist everything including tokens for long sessions
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') return localStorage;
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

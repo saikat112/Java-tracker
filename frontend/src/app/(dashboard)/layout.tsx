@@ -7,29 +7,33 @@ import TopBar from '@/components/layout/TopBar';
 import PWAInstallBanner from '@/components/PWAInstallBanner';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, verifySession } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [verified, setVerified] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Verify session is still valid with backend
+    verifySession().finally(() => setVerified(true));
   }, []);
 
   useEffect(() => {
-    if (mounted && !isAuthenticated) {
+    if (mounted && verified && !isAuthenticated) {
       router.replace('/login');
     }
-  }, [mounted, isAuthenticated, router]);
+  }, [mounted, verified, isAuthenticated, router]);
 
-  // Prevent flash of unauthenticated content
-  if (!mounted) {
+  // Show loading spinner while checking auth
+  if (!mounted || !verified) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 bg-violet-600 rounded-2xl flex items-center justify-center">
-            <span className="text-white text-xl font-bold">₹</span>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-violet-600 rounded-3xl flex items-center justify-center shadow-lg shadow-violet-200">
+            <span className="text-white text-2xl font-bold">₹</span>
           </div>
-          <div className="w-6 h-6 border-2 border-violet-600/30 border-t-violet-600 rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
     );
