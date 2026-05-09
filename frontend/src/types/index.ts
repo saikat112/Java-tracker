@@ -29,6 +29,8 @@ export interface Expense {
   expenseDate: string;
   weekNumber?: number;
   category?: Category;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'NET_BANKING' | 'WALLET';

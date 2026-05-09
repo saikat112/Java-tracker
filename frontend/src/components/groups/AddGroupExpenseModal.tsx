@@ -1,11 +1,11 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useGroupStore } from '@/store/groupStore';
 import { useExpenseStore } from '@/store/expenseStore';
-import { X, Receipt } from 'lucide-react';
+import { X, Receipt, ChevronDown } from 'lucide-react';
 
 const schema = z.object({
   title: z.string().min(1, 'Select or enter an item'),
@@ -18,9 +18,26 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const QUICK_ITEMS = [
-  '🛢️ Oil', '🥩 Meat', '🥦 Vegetables', '🛒 Groceries',
-  '🐟 Fish', '🥚 Eggs', '🍚 Rice', '🥛 Milk',
-  '🍞 Bread', '🧅 Onion', '🍗 Chicken', '🧴 Soap',
+  { emoji: '🛢️', label: 'Oil' },
+  { emoji: '🥩', label: 'Meat' },
+  { emoji: '🥦', label: 'Vegetables' },
+  { emoji: '🛒', label: 'Groceries' },
+  { emoji: '🐟', label: 'Fish' },
+  { emoji: '🥚', label: 'Eggs' },
+  { emoji: '🍚', label: 'Rice' },
+  { emoji: '🥛', label: 'Milk' },
+  { emoji: '🍞', label: 'Bread' },
+  { emoji: '🧅', label: 'Onion' },
+  { emoji: '🍗', label: 'Chicken' },
+  { emoji: '🧴', label: 'Soap' },
+  { emoji: '🫙', label: 'Spices' },
+  { emoji: '🥔', label: 'Potato' },
+  { emoji: '🍅', label: 'Tomato' },
+  { emoji: '🧈', label: 'Butter' },
+  { emoji: '🫒', label: 'Mustard Oil' },
+  { emoji: '🍋', label: 'Lemon' },
+  { emoji: '🥜', label: 'Dal' },
+  { emoji: '✏️', label: 'Other' },
 ];
 
 export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: string; onClose: () => void }) {
@@ -42,7 +59,9 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
   };
 
   const splitType = watch('splitType');
-  const titleValue = watch('title');
+  const titleValue = watch('title') || '';
+  const isOther = titleValue === 'Other' || (titleValue && !QUICK_ITEMS.find(i => i.label === titleValue));
+  const selectedItem = QUICK_ITEMS.find(i => i.label === titleValue);
 
   const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-gray-900 text-[15px] placeholder-gray-400 outline-none transition-all focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100";
 
@@ -92,35 +111,51 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
               {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
             </div>
 
-            {/* Quick item chips */}
+            {/* Item dropdown */}
             <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Quick Select</p>
-              <div className="flex flex-wrap gap-2">
-                {QUICK_ITEMS.map(item => {
-                  const label = item.split(' ').slice(1).join(' ');
-                  const isSelected = titleValue === label;
-                  return (
-                    <button key={item} type="button"
-                      onClick={() => setValue('title', label, { shouldValidate: true })}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition active:scale-95 ${
-                        isSelected
-                          ? 'bg-violet-600 text-white border-violet-600'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-violet-300'
-                      }`}>
-                      {item}
-                    </button>
-                  );
-                })}
+              <p className="text-sm font-semibold text-gray-700 mb-2">Item</p>
+              <div className="relative">
+                <select
+                  value={isOther ? 'Other' : titleValue}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === 'Other') {
+                      setValue('title', '', { shouldValidate: false });
+                    } else {
+                      setValue('title', val, { shouldValidate: true });
+                    }
+                  }}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-gray-900 text-[15px] outline-none transition-all focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-100 appearance-none pr-10">
+                  <option value="">-- Select item --</option>
+                  {QUICK_ITEMS.map(item => (
+                    <option key={item.label} value={item.label}>
+                      {item.emoji} {item.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
+              {errors.title && !isOther && (
+                <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.title.message}</p>
+              )}
             </div>
 
-            {/* Custom item input */}
-            <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Or type item name</p>
-              <input {...register('title')} placeholder="e.g. Paneer, Atta, Detergent..."
-                className={inputCls} />
-              {errors.title && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.title.message}</p>}
-            </div>
+            {/* Custom input if Other selected */}
+            {(isOther || titleValue === '') && (
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">
+                  Custom Item Name
+                </p>
+                <input
+                  value={isOther && titleValue !== 'Other' ? titleValue : ''}
+                  onChange={e => setValue('title', e.target.value, { shouldValidate: true })}
+                  placeholder="e.g. Paneer, Atta, Detergent..."
+                  className={inputCls} />
+                {errors.title && (
+                  <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.title.message}</p>
+                )}
+              </div>
+            )}
 
             {/* Date & Category */}
             <div className="grid grid-cols-2 gap-3">
@@ -152,7 +187,7 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
                     <div className={`p-3 rounded-2xl border-2 text-center transition-all ${
                       splitType === opt.value
                         ? 'border-violet-500 bg-violet-50 text-violet-700'
-                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
+                        : 'border-gray-200 bg-gray-50 text-gray-600'
                     }`}>
                       <p className="text-sm font-semibold">{opt.label}</p>
                     </div>
@@ -170,14 +205,11 @@ export default function AddGroupExpenseModal({ groupId, onClose }: { groupId: st
                 rows={2} className={`${inputCls} resize-none`} />
             </div>
 
-            {/* Submit */}
             <button type="submit" disabled={isSubmitting}
               className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-[15px] py-4 rounded-2xl shadow-lg shadow-violet-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-              {isSubmitting ? (
-                <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Adding...</span></>
-              ) : (
-                'Add Expense'
-              )}
+              {isSubmitting
+                ? <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Adding...</span></>
+                : 'Add Expense'}
             </button>
           </form>
         </div>

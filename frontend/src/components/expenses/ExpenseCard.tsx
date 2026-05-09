@@ -1,47 +1,77 @@
 'use client';
 import { Expense } from '@/types';
 import { formatCurrency, formatDate, CATEGORY_COLORS } from '@/lib/utils';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pencil } from 'lucide-react';
 import { useExpenseStore } from '@/store/expenseStore';
 import { useState } from 'react';
+import EditExpenseModal from './EditExpenseModal';
 
 const EMOJI: Record<string, string> = {
-  Food:'🍔', Travel:'🚗', Rent:'🏠', Electricity:'⚡',
-  Shopping:'🛍️', Medicine:'💊', Bills:'📄', Entertainment:'🎬', Others:'📦',
+  Food: '🍔', Travel: '🚗', Rent: '🏠', Electricity: '⚡',
+  Shopping: '🛍️', Medicine: '💊', Bills: '📄', Entertainment: '🎬', Others: '📦',
 };
-const PAY: Record<string, string> = { CASH:'💵', CARD:'💳', UPI:'📱', NET_BANKING:'🏦', WALLET:'👛' };
+const PAY: Record<string, string> = {
+  CASH: '💵', CARD: '💳', UPI: '📱', NET_BANKING: '🏦', WALLET: '👛',
+};
 
 export default function ExpenseCard({ expense }: { expense: Expense }) {
   const { deleteExpense } = useExpenseStore();
-  const [del, setDel] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const color = expense.category ? CATEGORY_COLORS[expense.category.name] || '#9CA3AF' : '#9CA3AF';
 
+  // Check if expense was edited (updatedAt differs from createdAt by more than 1 min)
+  const isEdited = expense.updatedAt && expense.createdAt &&
+    new Date(expense.updatedAt).getTime() - new Date(expense.createdAt).getTime() > 60000;
+
   return (
-    <div className={`card p-4 flex items-center gap-3 tap transition-all ${del ? 'opacity-40 scale-95' : ''}`}>
-      <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
-        style={{ background: `${color}18` }}>
-        {expense.category ? EMOJI[expense.category.name] || '💸' : '💸'}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-[15px] truncate">{expense.title}</p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-xs text-gray-400">{formatDate(expense.expenseDate)}</span>
-          {expense.category && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-              style={{ background: `${color}18`, color }}>
-              {expense.category.name}
-            </span>
-          )}
-          <span className="text-xs">{PAY[expense.paymentMethod] || '💵'}</span>
+    <>
+      <div className={`bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-3 transition-all ${deleting ? 'opacity-40 scale-95' : ''}`}>
+        {/* Icon */}
+        <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
+          style={{ background: `${color}18` }}>
+          {expense.category ? EMOJI[expense.category.name] || '💸' : '💸'}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-gray-900 text-[15px] truncate">{expense.title}</p>
+            {isEdited && (
+              <span className="flex-shrink-0 text-[10px] font-semibold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">
+                edited
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            <span className="text-xs text-gray-400">{formatDate(expense.expenseDate)}</span>
+            {expense.category && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                style={{ background: `${color}18`, color }}>
+                {expense.category.name}
+              </span>
+            )}
+            <span className="text-xs">{PAY[expense.paymentMethod] || '💵'}</span>
+          </div>
+        </div>
+
+        {/* Amount + actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="font-bold text-gray-900">{formatCurrency(expense.amount)}</span>
+          <button onClick={() => setShowEdit(true)}
+            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-violet-500 hover:bg-violet-50 rounded-xl transition">
+            <Pencil size={13} />
+          </button>
+          <button onClick={async () => { setDeleting(true); await deleteExpense(expense.id); }}
+            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-xl transition">
+            <Trash2 size={13} />
+          </button>
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="font-bold text-gray-900">{formatCurrency(expense.amount)}</span>
-        <button onClick={async () => { setDel(true); await deleteExpense(expense.id); }}
-          className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-xl transition">
-          <Trash2 size={14} />
-        </button>
-      </div>
-    </div>
+
+      {showEdit && (
+        <EditExpenseModal expense={expense} onClose={() => setShowEdit(false)} />
+      )}
+    </>
   );
 }

@@ -21,7 +21,8 @@ public class EntityMapper {
         return new ExpenseResponse(
                 expense.getId(), expense.getTitle(), expense.getAmount(),
                 expense.getNotes(), expense.getPaymentMethod(), expense.getExpenseDate(),
-                expense.getWeekNumber(), toCategoryResponse(expense.getCategory())
+                expense.getWeekNumber(), toCategoryResponse(expense.getCategory()),
+                expense.getCreatedAt(), expense.getUpdatedAt()
         );
     }
 

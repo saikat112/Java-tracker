@@ -4,6 +4,7 @@ import com.expensemanager.enums.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record ExpenseResponse(
@@ -14,5 +15,7 @@ public record ExpenseResponse(
         PaymentMethod paymentMethod,
         LocalDate expenseDate,
         Integer weekNumber,
-        CategoryResponse category
+        CategoryResponse category,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {}
